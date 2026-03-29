@@ -22,7 +22,7 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@infra/*": ["src/shared/infra/*"],
+      "@shared/*": ["src/shared/*"],
       "@academic/*": ["src/modules/academic/*"]
     }
   }

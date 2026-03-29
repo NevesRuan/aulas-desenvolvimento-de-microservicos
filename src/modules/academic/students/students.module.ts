@@ -1,12 +1,12 @@
+import { StudentService } from "@academic/students/application/services/student.service";
 import { STUDENT_REPOSITORY } from "@academic/students/domain/repositories/student-repository.interface";
 import { StudentsController } from "@academic/students/infra/controllers/students.controller";
 import { DrizzleStudentRepository } from "@academic/students/infra/repositories/drizzle-student.repository";
-import { DatabaseModule } from "@infra/database/database.module";
 import { Module } from "@nestjs/common";
-import { StudentService } from "./application/services/student.service";
+import { SharedModule } from "@shared/shared.module";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [SharedModule],
   controllers: [StudentsController],
   providers: [
     StudentService,
