@@ -26,7 +26,9 @@
       "@academic/*": ["src/modules/academic/*"],
       "@attendance/*": ["src/modules/attendance/*"],
       "@class-offering/*": ["src/modules/class-offering/*"],
-      "@enrollment/*": ["src/modules/enrollment/*"]
+      "@enrollment/*": ["src/modules/enrollment/*"],
+      "@users/*": ["src/modules/users/*"],
+      "@auth/*": ["src/modules/auth/*"]
     }
   }
 }

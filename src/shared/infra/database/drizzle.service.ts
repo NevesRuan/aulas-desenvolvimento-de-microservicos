@@ -13,8 +13,8 @@ import {
   enrollmentStatusEnum,
   enrollmentsSchema,
 } from "@enrollment/infra/database/schemas/enrollment.schema";
-
 import { Injectable, type OnModuleDestroy } from "@nestjs/common";
+import { usersSchema } from "@users/infra/database/schemas/user.schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
@@ -28,6 +28,7 @@ const schema = {
   classOfferingStatusEnum,
   enrollmentsSchema,
   enrollmentStatusEnum,
+  usersSchema,
 };
 
 @Injectable()
