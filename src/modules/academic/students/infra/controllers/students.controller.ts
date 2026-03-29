@@ -1,9 +1,5 @@
 import { StudentDto } from "@academic/students/application/dto/student.dto";
-import { CreateStudentService } from "@academic/students/application/services/create-student.service";
-import { EditStudentService } from "@academic/students/application/services/edit-student.service";
-import { ListStudentsService } from "@academic/students/application/services/list-students.service";
-import { RemoveStudentService } from "@academic/students/application/services/remove-student.service";
-import { ReturnStudentService } from "@academic/students/application/services/return-student.service";
+import { StudentService } from "@academic/students/application/services/student.service";
 import {
   Body,
   Controller,
@@ -16,36 +12,30 @@ import {
 
 @Controller("students")
 export class StudentsController {
-  constructor(
-    private readonly createStudentService: CreateStudentService,
-    private readonly editStudentService: EditStudentService,
-    private readonly listStudentService: ListStudentsService,
-    private readonly returnStudentService: ReturnStudentService,
-    private readonly removeStudentService: RemoveStudentService,
-  ) {}
+  constructor(private readonly studentService: StudentService) {}
 
   @Get()
   async findAll() {
-    return this.listStudentService.execute();
+    return this.studentService.list();
   }
 
   @Get(":id")
   async findById(@Param("id") id: string) {
-    return this.returnStudentService.executeById(id);
+    return this.studentService.findById(id);
   }
 
   @Post()
   async create(@Body() body: StudentDto) {
-    return this.createStudentService.execute(body);
+    return this.studentService.create(body);
   }
 
   @Put(":id")
   async update(@Param("id") id: string, @Body() body: StudentDto) {
-    return this.editStudentService.execute(id, body);
+    return this.studentService.edit(id, body);
   }
 
   @Delete(":id")
   async remove(@Param("id") id: string) {
-    return this.removeStudentService.execute(id);
+    return this.studentService.remove(id);
   }
 }
