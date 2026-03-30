@@ -1,4 +1,4 @@
-import type { LoginDto } from "@auth/application/dto/auth.dto";
+import type { LoginDto } from "@auth/application/dto/login.dto";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "@users/application/services/user.service";

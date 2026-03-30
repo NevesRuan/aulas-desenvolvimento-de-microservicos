@@ -13,6 +13,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { PaginatedResult } from "@shared/infra/hateoas";
 
 @Injectable()
 export class EnrollmentService {
@@ -57,9 +58,12 @@ export class EnrollmentService {
     await this.enrollmentRepository.cancel(id);
   }
 
-  async listByClassOffering(classOfferingId: string): Promise<EnrollmentDto[]> {
+  async listByClassOffering(
+    classOfferingId: string,
+  ): Promise<PaginatedResult<EnrollmentDto>> {
     const response =
       await this.enrollmentRepository.findByClassOfferingId(classOfferingId);
-    return response.map((row) => EnrollmentDto.from(row)!);
+    const data = response.map((row) => EnrollmentDto.from(row)!);
+    return { data, total: data.length, page: 1, limit: data.length || 1 };
   }
 }

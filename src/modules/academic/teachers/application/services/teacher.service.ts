@@ -1,4 +1,6 @@
+import { CreateTeacherDto } from "@academic/teachers/application/dto/create-teacher.dto";
 import { TeacherDto } from "@academic/teachers/application/dto/teacher.dto";
+import { UpdateTeacherDto } from "@academic/teachers/application/dto/update-teacher.dto";
 import { Teacher } from "@academic/teachers/domain/models/teacher.entity";
 import {
   TEACHER_REPOSITORY,
@@ -10,6 +12,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { PaginatedResult, PaginationParams } from "@shared/infra/hateoas";
 
 @Injectable()
 export class TeacherService {
@@ -18,7 +21,7 @@ export class TeacherService {
     private readonly teacherRepository: TeacherRepository,
   ) {}
 
-  async create(dto: TeacherDto): Promise<void> {
+  async create(dto: CreateTeacherDto): Promise<void> {
     const existing = await this.teacherRepository.findByEmail(dto.email);
 
     if (existing) {
@@ -29,7 +32,7 @@ export class TeacherService {
     await this.teacherRepository.create(teacher!);
   }
 
-  async edit(id: string, dto: TeacherDto): Promise<void> {
+  async edit(id: string, dto: UpdateTeacherDto): Promise<void> {
     const teacher = await this.teacherRepository.findById(id);
 
     if (!teacher) {
@@ -44,13 +47,12 @@ export class TeacherService {
       }
     }
 
-    teacher
-      .withName(dto.name)
-      .withEmail(dto.email)
-      .withDocument(dto.document)
-      .withDegree(dto.degree)
-      .withSpecialization(dto.specialization)
-      .withAdmissionDate(dto.admissionDate);
+    if (dto.name) teacher.withName(dto.name);
+    if (dto.email) teacher.withEmail(dto.email);
+    if (dto.document) teacher.withDocument(dto.document);
+    if (dto.degree) teacher.withDegree(dto.degree);
+    if (dto.specialization) teacher.withSpecialization(dto.specialization);
+    if (dto.admissionDate) teacher.withAdmissionDate(dto.admissionDate);
 
     await this.teacherRepository.update(teacher);
   }
@@ -62,6 +64,19 @@ export class TeacherService {
   async list(): Promise<TeacherDto[]> {
     const response = await this.teacherRepository.findAll();
     return response.map((row) => TeacherDto.from(row)!);
+  }
+
+  async listPaginated(
+    params: PaginationParams,
+  ): Promise<PaginatedResult<TeacherDto>> {
+    const { rows, total } =
+      await this.teacherRepository.findAllPaginated(params);
+    return {
+      data: rows.map((row) => TeacherDto.from(row)!),
+      total,
+      page: params.page,
+      limit: params.limit,
+    };
   }
 
   async findById(id: string): Promise<TeacherDto | null> {

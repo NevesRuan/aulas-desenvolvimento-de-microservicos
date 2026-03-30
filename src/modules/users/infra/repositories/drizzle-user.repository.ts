@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { DrizzleService } from "@shared/infra/database/drizzle.service";
+import type { PaginationParams } from "@shared/infra/hateoas";
 import { User } from "@users/domain/models/user.entity";
 import type { UserRepository } from "@users/domain/repositories/user-repository.interface";
 import { usersSchema } from "@users/infra/database/schemas/user.schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 @Injectable()
 export class DrizzleUserRepository implements UserRepository {
@@ -62,5 +63,22 @@ export class DrizzleUserRepository implements UserRepository {
   async findAll(): Promise<User[]> {
     const rows = await this.drizzleService.db.select().from(usersSchema);
     return rows.map((row) => User.restore(row)!);
+  }
+
+  async findAllPaginated(params: PaginationParams): Promise<{ rows: User[]; total: number }> {
+    const { page, limit } = params;
+    const offset = (page - 1) * limit;
+
+    const [rows, [countResult]] = await Promise.all([
+      this.drizzleService.db.select().from(usersSchema).limit(limit).offset(offset),
+      this.drizzleService.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(usersSchema),
+    ]);
+
+    return {
+      rows: rows.map((row) => User.restore(row)!),
+      total: countResult.count,
+    };
   }
 }

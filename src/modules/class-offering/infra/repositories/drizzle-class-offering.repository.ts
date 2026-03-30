@@ -6,7 +6,8 @@ import type { ClassOfferingRepository } from "@class-offering/domain/repositorie
 import { classOfferingsSchema } from "@class-offering/infra/database/schemas/class-offering.schema";
 import { Injectable } from "@nestjs/common";
 import { DrizzleService } from "@shared/infra/database/drizzle.service";
-import { eq } from "drizzle-orm";
+import type { PaginationParams } from "@shared/infra/hateoas";
+import { eq, sql } from "drizzle-orm";
 
 @Injectable()
 export class DrizzleClassOfferingRepository implements ClassOfferingRepository {
@@ -50,6 +51,25 @@ export class DrizzleClassOfferingRepository implements ClassOfferingRepository {
       ...result[0],
       status: result[0].status as ClassOfferingStatus,
     });
+  }
+
+  async findAllPaginated(params: PaginationParams): Promise<{ rows: ClassOffering[]; total: number }> {
+    const { page, limit } = params;
+    const offset = (page - 1) * limit;
+
+    const [rows, [countResult]] = await Promise.all([
+      this.drizzleService.db.select().from(classOfferingsSchema).limit(limit).offset(offset),
+      this.drizzleService.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(classOfferingsSchema),
+    ]);
+
+    return {
+      rows: rows.map((row) =>
+        ClassOffering.restore({ ...row, status: row.status as ClassOfferingStatus })!,
+      ),
+      total: countResult.count,
+    };
   }
 
   async updateStatus(id: string, status: ClassOfferingStatus): Promise<void> {

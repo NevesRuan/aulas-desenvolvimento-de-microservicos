@@ -3,7 +3,8 @@ import type { TeacherRepository } from "@academic/teachers/domain/repositories/t
 import { teachersSchema } from "@academic/teachers/infra/database/schemas/teacher.schema";
 import { Injectable } from "@nestjs/common";
 import { DrizzleService } from "@shared/infra/database/drizzle.service";
-import { eq } from "drizzle-orm";
+import type { PaginationParams } from "@shared/infra/hateoas";
+import { eq, sql } from "drizzle-orm";
 
 @Injectable()
 export class DrizzleTeacherRepository implements TeacherRepository {
@@ -66,5 +67,22 @@ export class DrizzleTeacherRepository implements TeacherRepository {
   async findAll(): Promise<Teacher[]> {
     const rows = await this.drizzleService.db.select().from(teachersSchema);
     return rows.map((row) => Teacher.restore(row)!);
+  }
+
+  async findAllPaginated(params: PaginationParams): Promise<{ rows: Teacher[]; total: number }> {
+    const { page, limit } = params;
+    const offset = (page - 1) * limit;
+
+    const [rows, [countResult]] = await Promise.all([
+      this.drizzleService.db.select().from(teachersSchema).limit(limit).offset(offset),
+      this.drizzleService.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(teachersSchema),
+    ]);
+
+    return {
+      rows: rows.map((row) => Teacher.restore(row)!),
+      total: countResult.count,
+    };
   }
 }

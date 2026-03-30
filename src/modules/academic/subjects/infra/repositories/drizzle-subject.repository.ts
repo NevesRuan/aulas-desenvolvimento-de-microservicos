@@ -3,7 +3,8 @@ import type { SubjectRepository } from "@academic/subjects/domain/repositories/s
 import { subjectsSchema } from "@academic/subjects/infra/database/schemas/subject.schema";
 import { Injectable } from "@nestjs/common";
 import { DrizzleService } from "@shared/infra/database/drizzle.service";
-import { eq } from "drizzle-orm";
+import type { PaginationParams } from "@shared/infra/hateoas";
+import { eq, sql } from "drizzle-orm";
 
 @Injectable()
 export class DrizzleSubjectRepository implements SubjectRepository {
@@ -62,5 +63,22 @@ export class DrizzleSubjectRepository implements SubjectRepository {
   async findAll(): Promise<Subject[]> {
     const rows = await this.drizzleService.db.select().from(subjectsSchema);
     return rows.map((row) => Subject.restore(row)!);
+  }
+
+  async findAllPaginated(params: PaginationParams): Promise<{ rows: Subject[]; total: number }> {
+    const { page, limit } = params;
+    const offset = (page - 1) * limit;
+
+    const [rows, [countResult]] = await Promise.all([
+      this.drizzleService.db.select().from(subjectsSchema).limit(limit).offset(offset),
+      this.drizzleService.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(subjectsSchema),
+    ]);
+
+    return {
+      rows: rows.map((row) => Subject.restore(row)!),
+      total: countResult.count,
+    };
   }
 }

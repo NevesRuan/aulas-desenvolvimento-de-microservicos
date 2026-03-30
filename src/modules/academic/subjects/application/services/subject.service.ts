@@ -1,4 +1,6 @@
+import { CreateSubjectDto } from "@academic/subjects/application/dto/create-subject.dto";
 import { SubjectDto } from "@academic/subjects/application/dto/subject.dto";
+import { UpdateSubjectDto } from "@academic/subjects/application/dto/update-subject.dto";
 import { Subject } from "@academic/subjects/domain/models/subject.entity";
 import {
   SUBJECT_REPOSITORY,
@@ -10,6 +12,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { PaginatedResult, PaginationParams } from "@shared/infra/hateoas";
 
 @Injectable()
 export class SubjectService {
@@ -18,7 +21,7 @@ export class SubjectService {
     private readonly subjectRepository: SubjectRepository,
   ) {}
 
-  async create(dto: SubjectDto): Promise<void> {
+  async create(dto: CreateSubjectDto): Promise<void> {
     const existing = await this.subjectRepository.findByCode(dto.code);
 
     if (existing) {
@@ -29,7 +32,7 @@ export class SubjectService {
     await this.subjectRepository.create(subject!);
   }
 
-  async edit(id: string, dto: SubjectDto): Promise<void> {
+  async edit(id: string, dto: UpdateSubjectDto): Promise<void> {
     const subject = await this.subjectRepository.findById(id);
 
     if (!subject) {
@@ -44,11 +47,10 @@ export class SubjectService {
       }
     }
 
-    subject
-      .withName(dto.name)
-      .withCode(dto.code)
-      .withWorkload(dto.workload)
-      .withDescription(dto.description);
+    if (dto.name) subject.withName(dto.name);
+    if (dto.code) subject.withCode(dto.code);
+    if (dto.workload) subject.withWorkload(dto.workload);
+    if (dto.description) subject.withDescription(dto.description);
 
     await this.subjectRepository.update(subject);
   }
@@ -60,6 +62,19 @@ export class SubjectService {
   async list(): Promise<SubjectDto[]> {
     const response = await this.subjectRepository.findAll();
     return response.map((row) => SubjectDto.from(row)!);
+  }
+
+  async listPaginated(
+    params: PaginationParams,
+  ): Promise<PaginatedResult<SubjectDto>> {
+    const { rows, total } =
+      await this.subjectRepository.findAllPaginated(params);
+    return {
+      data: rows.map((row) => SubjectDto.from(row)!),
+      total,
+      page: params.page,
+      limit: params.limit,
+    };
   }
 
   async findById(id: string): Promise<SubjectDto | null> {

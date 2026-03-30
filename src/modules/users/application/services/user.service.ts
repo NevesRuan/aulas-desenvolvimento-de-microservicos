@@ -4,12 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import {
-  type CreateUserDto,
-  type UpdateUserDto,
-  type UserPayload,
-  UserResponseDto,
-} from "@users/application/dto/user.dto";
+import type { PaginatedResult, PaginationParams } from "@shared/infra/hateoas";
+import { CreateUserDto } from "@users/application/dto/create-user.dto";
+import { UpdateUserDto } from "@users/application/dto/update-user.dto";
+import { UserPayload } from "@users/application/dto/user-payload.interface";
+import { UserResponseDto } from "@users/application/dto/user-response.dto";
 import { User } from "@users/domain/models/user.entity";
 import {
   USER_REPOSITORY,
@@ -68,6 +67,18 @@ export class UserService {
   async list(): Promise<UserResponseDto[]> {
     const users = await this.userRepository.findAll();
     return users.map((u) => UserResponseDto.from(u)!);
+  }
+
+  async listPaginated(
+    params: PaginationParams,
+  ): Promise<PaginatedResult<UserResponseDto>> {
+    const { rows, total } = await this.userRepository.findAllPaginated(params);
+    return {
+      data: rows.map((u) => UserResponseDto.from(u)!),
+      total,
+      page: params.page,
+      limit: params.limit,
+    };
   }
 
   async findById(id: string): Promise<UserResponseDto | null> {

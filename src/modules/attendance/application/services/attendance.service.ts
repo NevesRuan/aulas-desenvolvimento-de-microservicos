@@ -8,6 +8,7 @@ import {
   type AttendanceRepository,
 } from "@attendance/domain/repositories/attendance-repository.interface";
 import { Inject, Injectable } from "@nestjs/common";
+import type { PaginatedResult } from "@shared/infra/hateoas";
 
 @Injectable()
 export class AttendanceService {
@@ -29,18 +30,22 @@ export class AttendanceService {
   async findByStudentAndClassOffering(
     studentId: string,
     classOfferingId: string,
-  ): Promise<AttendanceDto[]> {
+  ): Promise<PaginatedResult<AttendanceDto>> {
     const records =
       await this.attendanceRepository.findByStudentAndClassOffering(
         studentId,
         classOfferingId,
       );
-    return records.map((r) => AttendanceDto.from(r)!);
+    const data = records.map((r) => AttendanceDto.from(r)!);
+    return { data, total: data.length, page: 1, limit: data.length || 1 };
   }
 
-  async findByClassOffering(classOfferingId: string): Promise<AttendanceDto[]> {
+  async findByClassOffering(
+    classOfferingId: string,
+  ): Promise<PaginatedResult<AttendanceDto>> {
     const records =
       await this.attendanceRepository.findByClassOffering(classOfferingId);
-    return records.map((r) => AttendanceDto.from(r)!);
+    const data = records.map((r) => AttendanceDto.from(r)!);
+    return { data, total: data.length, page: 1, limit: data.length || 1 };
   }
 }
