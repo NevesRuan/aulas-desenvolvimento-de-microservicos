@@ -1,23 +1,109 @@
-import type { ClassOffering } from "@class-offering/domain/models/class-offering.entity";
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import {
+  IsDate,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from "class-validator";
+import type { ClassOffering } from "@class-offering/domain/models/class-offering.entity";
 
-export class ClassOfferingDto {
-  @ApiProperty({ example: "uuid" })
-  id: string | undefined;
-
-  @ApiProperty({ example: "uuid-da-disciplina" })
+// DTO de entrada — com validação
+export class CreateClassOfferingDto {
+  @ApiProperty({
+    description: "ID único da disciplina (UUID)",
+    example: "550e8400-e29b-41d4-a716-446655440000",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsUUID()
   subjectId: string;
 
-  @ApiProperty({ example: "uuid-do-professor" })
+  @ApiProperty({
+    description: "ID único do professor (UUID)",
+    example: "550e8400-e29b-41d4-a716-446655440001",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsUUID()
   teacherId: string;
 
-  @ApiProperty({ example: "2024-03-01" })
+  @ApiProperty({
+    description: "Data de início da turma (ISO 8601)",
+    example: "2026-04-15T10:00:00Z",
+  })
+  @Type(() => Date)
+  @IsDate()
+  @IsNotEmpty()
   startDate: Date;
 
-  @ApiProperty({ example: "2024-07-01" })
+  @ApiProperty({
+    description: "Data de término da turma (ISO 8601)",
+    example: "2026-12-20T10:00:00Z",
+  })
+  @Type(() => Date)
+  @IsDate()
+  @IsNotEmpty()
+  endDate: Date;
+}
+
+export class UpdateClassOfferingDto {
+  @ApiProperty({
+    description: "ID único da disciplina (UUID)",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @IsUUID()
+  subjectId?: string;
+
+  @ApiProperty({
+    description: "ID único do professor (UUID)",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @IsUUID()
+  teacherId?: string;
+
+  @ApiProperty({
+    description: "Data de início da turma (ISO 8601)",
+    required: false,
+  })
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  startDate?: Date;
+
+  @ApiProperty({
+    description: "Data de término da turma (ISO 8601)",
+    required: false,
+  })
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  endDate?: Date;
+}
+
+// DTO de resposta — sem validação
+export class ClassOfferingDto {
+  @ApiProperty()
+  id: string | undefined;
+
+  @ApiProperty()
+  subjectId: string;
+
+  @ApiProperty()
+  teacherId: string;
+
+  @ApiProperty()
+  startDate: Date;
+
+  @ApiProperty()
   endDate: Date;
 
-  @ApiProperty({ example: "active" })
+  @ApiProperty()
   status: string;
 
   private constructor(
@@ -36,7 +122,9 @@ export class ClassOfferingDto {
     this.status = status;
   }
 
-  public static from(classOffering: ClassOffering | null): ClassOfferingDto | null {
+  public static from(
+    classOffering: ClassOffering | null,
+  ): ClassOfferingDto | null {
     if (!classOffering) return null;
     return new ClassOfferingDto(
       classOffering.id,

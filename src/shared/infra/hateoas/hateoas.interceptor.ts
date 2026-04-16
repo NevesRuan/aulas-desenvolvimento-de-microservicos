@@ -81,28 +81,31 @@ export class HateoasInterceptor implements NestInterceptor {
       _links: {
         self: {
           href: `${basePath}?page=${page}&limit=${limit}`,
-          method: "GET",
+          method: "GET" as const,
         },
         next:
           page < totalPages
             ? {
                 href: `${basePath}?page=${page + 1}&limit=${limit}`,
-                method: "GET",
+                method: "GET" as const,
               }
             : null,
         prev:
           page > 1
             ? {
                 href: `${basePath}?page=${page - 1}&limit=${limit}`,
-                method: "GET",
+                method: "GET" as const,
               }
             : null,
-        first: { href: `${basePath}?page=1&limit=${limit}`, method: "GET" },
+        first: {
+          href: `${basePath}?page=1&limit=${limit}`,
+          method: "GET" as const,
+        },
         last: {
           href: `${basePath}?page=${totalPages}&limit=${limit}`,
-          method: "GET",
+          method: "GET" as const,
         },
-        create: { href: basePath, method: "POST" },
+        create: { href: basePath, method: "POST" as const },
       },
     };
   }

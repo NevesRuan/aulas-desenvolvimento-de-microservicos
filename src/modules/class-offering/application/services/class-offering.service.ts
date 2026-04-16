@@ -1,3 +1,7 @@
+import {
+  CreateClassOfferingDto,
+  UpdateClassOfferingDto,
+} from "@class-offering/application/dto/class-offering.dto";
 import { ClassOfferingDto } from "@class-offering/application/dto/class-offering.dto";
 import {
   ClassOffering,
@@ -8,7 +12,7 @@ import {
   type ClassOfferingRepository,
 } from "@class-offering/domain/repositories/class-offering-repository.interface";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { PaginatedResult, PaginationParams } from "@shared/infra/hateoas";
+import type { PaginatedResult } from "@shared/infra/hateoas";
 
 @Injectable()
 export class ClassOfferingService {
@@ -17,12 +21,7 @@ export class ClassOfferingService {
     private readonly classOfferingRepository: ClassOfferingRepository,
   ) {}
 
-  async create(dto: {
-    subjectId: string;
-    teacherId: string;
-    startDate: Date;
-    endDate: Date;
-  }): Promise<void> {
+  async create(dto: CreateClassOfferingDto): Promise<void> {
     const classOffering = ClassOffering.restore({
       subjectId: dto.subjectId,
       teacherId: dto.teacherId,
@@ -39,16 +38,20 @@ export class ClassOfferingService {
     return response.map((row) => ClassOfferingDto.from(row)!);
   }
 
-  async listPaginated(
-    params: PaginationParams,
-  ): Promise<PaginatedResult<ClassOfferingDto>> {
-    const { rows, total } =
-      await this.classOfferingRepository.findAllPaginated(params);
+  async listPaginated(params: {
+    page: number;
+    limit: number;
+  }): Promise<PaginatedResult<ClassOfferingDto>> {
+    const result = await this.classOfferingRepository.findAllPaginated(
+      params.page,
+      params.limit,
+    );
+
     return {
-      data: rows.map((row) => ClassOfferingDto.from(row)!),
-      total,
-      page: params.page,
-      limit: params.limit,
+      data: result.data.map((row) => ClassOfferingDto.from(row)!),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
     };
   }
 

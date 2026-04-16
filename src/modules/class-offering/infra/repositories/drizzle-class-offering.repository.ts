@@ -3,11 +3,11 @@ import {
   ClassOfferingStatus,
 } from "@class-offering/domain/models/class-offering.entity";
 import type { ClassOfferingRepository } from "@class-offering/domain/repositories/class-offering-repository.interface";
-import { classOfferingsSchema } from "@class-offering/infra/database/schemas/class-offering.schema";
+import { classOfferingsSchema } from "@class-offering/infra/schemas/class-offering.schema";
 import { Injectable } from "@nestjs/common";
 import { DrizzleService } from "@shared/infra/database/drizzle.service";
-import type { PaginationParams } from "@shared/infra/hateoas";
-import { eq, sql } from "drizzle-orm";
+import type { PaginatedResult } from "@shared/infra/hateoas";
+import { count, eq } from "drizzle-orm";
 
 @Injectable()
 export class DrizzleClassOfferingRepository implements ClassOfferingRepository {
@@ -38,6 +38,39 @@ export class DrizzleClassOfferingRepository implements ClassOfferingRepository {
     );
   }
 
+  async findAllPaginated(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResult<ClassOffering>> {
+    const offset = (page - 1) * limit;
+
+    const [rows, countResult] = await Promise.all([
+      this.drizzleService.db
+        .select()
+        .from(classOfferingsSchema)
+        .limit(limit)
+        .offset(offset),
+      this.drizzleService.db
+        .select({ count: count() })
+        .from(classOfferingsSchema),
+    ]);
+
+    const total = countResult[0]?.count || 0;
+
+    return {
+      data: rows.map(
+        (row) =>
+          ClassOffering.restore({
+            ...row,
+            status: row.status as ClassOfferingStatus,
+          })!,
+      ),
+      total: typeof total === "number" ? total : 0,
+      page,
+      limit,
+    };
+  }
+
   async findById(id: string): Promise<ClassOffering | null> {
     const result = await this.drizzleService.db
       .select()
@@ -51,25 +84,6 @@ export class DrizzleClassOfferingRepository implements ClassOfferingRepository {
       ...result[0],
       status: result[0].status as ClassOfferingStatus,
     });
-  }
-
-  async findAllPaginated(params: PaginationParams): Promise<{ rows: ClassOffering[]; total: number }> {
-    const { page, limit } = params;
-    const offset = (page - 1) * limit;
-
-    const [rows, [countResult]] = await Promise.all([
-      this.drizzleService.db.select().from(classOfferingsSchema).limit(limit).offset(offset),
-      this.drizzleService.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(classOfferingsSchema),
-    ]);
-
-    return {
-      rows: rows.map((row) =>
-        ClassOffering.restore({ ...row, status: row.status as ClassOfferingStatus })!,
-      ),
-      total: countResult.count,
-    };
   }
 
   async updateStatus(id: string, status: ClassOfferingStatus): Promise<void> {

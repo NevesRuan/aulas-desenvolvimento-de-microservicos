@@ -6,8 +6,6 @@ import { AppModule } from "./app.module";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix("v1");
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -16,9 +14,13 @@ async function bootstrap() {
     }),
   );
 
+  app.setGlobalPrefix("v1");
+
   const config = new DocumentBuilder()
     .setTitle("School Control API")
-    .setDescription("API de controle escolar — gestão de alunos, professores, disciplinas, turmas, matrículas e presenças.")
+    .setDescription(
+      "API de gerenciamento de turmas, disciplinas e professores.",
+    )
     .setVersion("1.0")
     .addBearerAuth({ type: "http", scheme: "bearer", bearerFormat: "JWT" })
     .build();
@@ -26,6 +28,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("docs", app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT!);
 }
-bootstrap();
+
+void bootstrap();

@@ -8,6 +8,8 @@ API REST para gestão escolar, construída com NestJS + Drizzle ORM + PostgreSQL
 - [npm](https://www.npmjs.com) >= 10
 - [PostgreSQL](https://www.postgresql.org) >= 14 rodando localmente (ou via Docker)
 
+---
+
 ## Configuração
 
 ### 1. Instalar dependências
@@ -38,6 +40,8 @@ Com o PostgreSQL rodando, execute as migrações para criar as tabelas:
 npm run db:migrate
 ```
 
+---
+
 ## Rodando a aplicação
 
 ### Desenvolvimento (com hot reload)
@@ -55,6 +59,8 @@ npm run start:prod
 
 A API ficará disponível em `http://localhost:3001` (ou na porta configurada em `PORT`).
 
+---
+
 ## Scripts disponíveis
 
 | Script | Descrição |
@@ -70,6 +76,8 @@ A API ficará disponível em `http://localhost:3001` (ou na porta configurada em
 | `npm run lint` | Executa o linter (Biome) |
 | `npm run check` | Executa lint + formatação (Biome) |
 
+---
+
 ## Subindo o PostgreSQL com Docker
 
 Caso não tenha o PostgreSQL instalado localmente, suba uma instância com Docker:
@@ -82,3 +90,9 @@ docker run --name school-db \
   -p 5432:5432 \
   -d postgres:16
 ```
+
+---
+
+## Documentação
+
+- [Arquitetura do projeto](docs/arquitetura.md)

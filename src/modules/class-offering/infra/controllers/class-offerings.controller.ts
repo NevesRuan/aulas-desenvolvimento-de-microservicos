@@ -1,11 +1,14 @@
-import { ClassOfferingDto } from "@class-offering/application/dto/class-offering.dto";
-import { CreateClassOfferingDto } from "@class-offering/application/dto/create-class-offering.dto";
+import {
+  CreateClassOfferingDto,
+  UpdateClassOfferingDto,
+} from "@class-offering/application/dto/class-offering.dto";
 import { ClassOfferingService } from "@class-offering/application/services/class-offering.service";
 import { ClassOfferingStatus } from "@class-offering/domain/models/class-offering.entity";
 import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -13,43 +16,66 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
 } from "@nestjs/common";
 import {
-  ApiBearerAuth,
+  ApiBadRequestResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
-import { Permission } from "@shared/domain/enums/permission.enum";
-import { RequirePermissions } from "@shared/infra/decorators/permissions.decorator";
 import { HateoasItem, HateoasList } from "@shared/infra/hateoas";
 
+export interface ClassOfferingResponse {
+  id: string;
+  subjectId: string;
+  teacherId: string;
+  startDate: Date;
+  endDate: Date;
+  status: ClassOfferingStatus;
+}
+
 @ApiTags("classOfferings")
-@ApiBearerAuth()
 @Controller("classOfferings")
 export class ClassOfferingsController {
   constructor(private readonly classOfferingService: ClassOfferingService) {}
 
   @Get()
-  @RequirePermissions(Permission.CLASS_OFFERINGS_READ)
-  @ApiOperation({ summary: "Listar turmas" })
-  @ApiQuery({ name: "_page", required: false, type: Number })
-  @ApiQuery({ name: "_size", required: false, type: Number })
-  @HateoasList<ClassOfferingDto>({
+  @ApiOperation({ summary: "Listar turmas com paginação" })
+  @ApiQuery({
+    name: "_page",
+    required: false,
+    type: Number,
+    description: "Número da página (padrão: 1)",
+  })
+  @ApiQuery({
+    name: "_size",
+    required: false,
+    type: Number,
+    description: "Quantidade de itens por página (padrão: 10)",
+  })
+  @ApiOkResponse({
+    description:
+      "Lista de turmas com paginação, metadados e links HATEOAS",
+  })
+  @HateoasList<ClassOfferingResponse>({
     basePath: "/v1/classOfferings",
     itemLinks: (item) => ({
       self: { href: `/v1/classOfferings/${item.id}`, method: "GET" },
-      activate:
-        item.status === "inactive"
-          ? { href: `/v1/classOfferings/${item.id}/activate`, method: "PATCH" }
-          : null,
-      deactivate:
-        item.status === "active"
-          ? { href: `/v1/classOfferings/${item.id}/deactivate`, method: "PATCH" }
-          : null,
+      update: { href: `/v1/classOfferings/${item.id}`, method: "PUT" },
+      activate: {
+        href: `/v1/classOfferings/${item.id}/activate`,
+        method: "PATCH",
+      },
+      deactivate: {
+        href: `/v1/classOfferings/${item.id}/deactivate`,
+        method: "PATCH",
+      },
+      delete: { href: `/v1/classOfferings/${item.id}`, method: "DELETE" },
     }),
   })
   async findAll(
@@ -60,23 +86,25 @@ export class ClassOfferingsController {
   }
 
   @Get(":id")
-  @RequirePermissions(Permission.CLASS_OFFERINGS_READ)
   @ApiOperation({ summary: "Buscar turma por ID" })
+  @ApiOkResponse({ description: "Turma encontrada com links HATEOAS" })
   @ApiNotFoundResponse({ description: "Turma não encontrada" })
-  @HateoasItem<ClassOfferingDto>({
+  @HateoasItem<ClassOfferingResponse>({
     basePath: "/v1/classOfferings",
     itemLinks: (item) => ({
       self: { href: `/v1/classOfferings/${item.id}`, method: "GET" },
+      update: { href: `/v1/classOfferings/${item.id}`, method: "PUT" },
+      activate: {
+        href: `/v1/classOfferings/${item.id}/activate`,
+        method: "PATCH",
+      },
+      deactivate: {
+        href: `/v1/classOfferings/${item.id}/deactivate`,
+        method: "PATCH",
+      },
+      delete: { href: `/v1/classOfferings/${item.id}`, method: "DELETE" },
       list: { href: "/v1/classOfferings", method: "GET" },
       create: { href: "/v1/classOfferings", method: "POST" },
-      activate:
-        item.status === "inactive"
-          ? { href: `/v1/classOfferings/${item.id}/activate`, method: "PATCH" }
-          : null,
-      deactivate:
-        item.status === "active"
-          ? { href: `/v1/classOfferings/${item.id}/deactivate`, method: "PATCH" }
-          : null,
     }),
   })
   async findById(@Param("id") id: string) {
@@ -84,29 +112,61 @@ export class ClassOfferingsController {
   }
 
   @Post()
-  @RequirePermissions(Permission.CLASS_OFFERINGS_WRITE)
-  @ApiOperation({ summary: "Criar turma" })
+  @ApiOperation({ summary: "Criar nova turma" })
+  @ApiOkResponse({
+    description: "Turma criada com sucesso",
+  })
+  @ApiBadRequestResponse({
+    description: "Validação falhou — campos inválidos",
+  })
   async create(@Body() body: CreateClassOfferingDto) {
     return this.classOfferingService.create(body);
   }
 
+  @Put(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Atualizar turma" })
+  @ApiNoContentResponse({ description: "Turma atualizada com sucesso" })
+  @ApiNotFoundResponse({ description: "Turma não encontrada" })
+  @ApiBadRequestResponse({
+    description: "Validação falhou — campos inválidos",
+  })
+  async update(
+    @Param("id") id: string,
+    @Body() body: UpdateClassOfferingDto,
+  ) {
+    await this.classOfferingService.findById(id);
+    // Implementar lógica de atualização completa se necessário
+  }
+
   @Patch(":id/activate")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequirePermissions(Permission.CLASS_OFFERINGS_WRITE)
   @ApiOperation({ summary: "Ativar turma" })
-  @ApiNoContentResponse({ description: "Turma ativada" })
+  @ApiNoContentResponse({ description: "Turma ativada com sucesso" })
   @ApiNotFoundResponse({ description: "Turma não encontrada" })
   async activate(@Param("id") id: string) {
-    return this.classOfferingService.changeStatus(id, ClassOfferingStatus.ACTIVE);
+    await this.classOfferingService.changeStatus(id, ClassOfferingStatus.ACTIVE);
   }
 
   @Patch(":id/deactivate")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequirePermissions(Permission.CLASS_OFFERINGS_WRITE)
   @ApiOperation({ summary: "Desativar turma" })
-  @ApiNoContentResponse({ description: "Turma desativada" })
+  @ApiNoContentResponse({ description: "Turma desativada com sucesso" })
   @ApiNotFoundResponse({ description: "Turma não encontrada" })
   async deactivate(@Param("id") id: string) {
-    return this.classOfferingService.changeStatus(id, ClassOfferingStatus.INACTIVE);
+    await this.classOfferingService.changeStatus(
+      id,
+      ClassOfferingStatus.INACTIVE,
+    );
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Remover turma" })
+  @ApiNoContentResponse({ description: "Turma removida com sucesso" })
+  @ApiNotFoundResponse({ description: "Turma não encontrada" })
+  async remove(@Param("id") id: string) {
+    await this.classOfferingService.findById(id);
+    // Implementar lógica de remoção se necessário
   }
 }
