@@ -28,6 +28,10 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("docs", app, document);
 
+  // Iniciar microserviços (RabbitMQ)
+  await app.startAllMicroservices();
+
+  // Iniciar servidor HTTP
   await app.listen(process.env.PORT!);
 }
 

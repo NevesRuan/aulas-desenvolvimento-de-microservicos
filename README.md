@@ -91,6 +91,19 @@ docker run --name school-db \
   -d postgres:16
 ```
 
+## Subindo o RabbitMQ com Docker
+
+Para usar filas com RabbitMQ (para turmas), suba uma instância:
+
+```bash
+docker run --name rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  -d rabbitmq:3-management
+```
+
+O painel de administração fica em `http://localhost:15672` (guest/guest).
+
 ---
 
 ## Documentação

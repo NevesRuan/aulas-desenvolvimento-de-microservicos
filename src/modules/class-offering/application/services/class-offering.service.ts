@@ -3,6 +3,7 @@ import {
   UpdateClassOfferingDto,
 } from "@class-offering/application/dto/class-offering.dto";
 import { ClassOfferingDto } from "@class-offering/application/dto/class-offering.dto";
+import { ClassOfferingQueueService } from "@class-offering/application/services/class-offering-queue.service";
 import {
   ClassOffering,
   ClassOfferingStatus,
@@ -19,6 +20,7 @@ export class ClassOfferingService {
   constructor(
     @Inject(CLASS_OFFERING_REPOSITORY)
     private readonly classOfferingRepository: ClassOfferingRepository,
+    private readonly classOfferingQueueService: ClassOfferingQueueService,
   ) {}
 
   async create(dto: CreateClassOfferingDto): Promise<void> {
@@ -30,7 +32,14 @@ export class ClassOfferingService {
       status: ClassOfferingStatus.ACTIVE,
     });
 
-    await this.classOfferingRepository.create(classOffering!);
+    if (!classOffering) {
+      throw new Error("Invalid class offering data");
+    }
+
+    const id = await this.classOfferingRepository.create(classOffering);
+
+    // Publicar na fila
+    await this.classOfferingQueueService.publishClassOfferingCreated(id, dto);
   }
 
   async list(): Promise<ClassOfferingDto[]> {
@@ -68,5 +77,10 @@ export class ClassOfferingService {
     }
 
     await this.classOfferingRepository.updateStatus(id, status);
+
+    // Publicar na fila
+    await this.classOfferingQueueService.publishClassOfferingUpdated(id, {
+      status,
+    });
   }
 }

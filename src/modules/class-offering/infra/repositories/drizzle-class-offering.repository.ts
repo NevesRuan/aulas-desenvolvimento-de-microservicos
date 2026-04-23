@@ -13,8 +13,8 @@ import { count, eq } from "drizzle-orm";
 export class DrizzleClassOfferingRepository implements ClassOfferingRepository {
   constructor(private readonly drizzleService: DrizzleService) {}
 
-  async create(classOffering: ClassOffering): Promise<void> {
-    await this.drizzleService.db.insert(classOfferingsSchema).values({
+  async create(classOffering: ClassOffering): Promise<string> {
+    const result = await this.drizzleService.db.insert(classOfferingsSchema).values({
       subjectId: classOffering.subjectId,
       teacherId: classOffering.teacherId,
       startDate: classOffering.startDate,
@@ -22,7 +22,9 @@ export class DrizzleClassOfferingRepository implements ClassOfferingRepository {
       status: classOffering.status,
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    }).returning({ id: classOfferingsSchema.id });
+
+    return result[0].id;
   }
 
   async findAll(): Promise<ClassOffering[]> {
