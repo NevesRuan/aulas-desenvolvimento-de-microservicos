@@ -1,6 +1,7 @@
 export enum ClassOfferingStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
+  CANCELED = "canceled",
 }
 
 export class ClassOffering {

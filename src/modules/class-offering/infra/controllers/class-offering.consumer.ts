@@ -1,26 +1,58 @@
-import { Controller, Inject, OnModuleInit } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { RabbitMQService } from "@class-offering/infra/rabbitmq/rabbitmq.service";
 
-@Controller()
+const QUEUES = [
+  {
+    queue:      "class-offering.academic-subjects.created.queue",
+    exchange:   "academic.subjects.created.exchange",
+    routingKey: "subject.created",
+  },
+  {
+    queue:      "class-offering.academic-subjects.updated.queue",
+    exchange:   "academic.subjects.updated.exchange",
+    routingKey: "subject.updated",
+  },
+  {
+    queue:      "class-offering.academic-subjects.deleted.queue",
+    exchange:   "academic.subjects.deleted.exchange",
+    routingKey: "subject.deleted",
+  },
+  {
+    queue:      "class-offering.academic-teachers.created.queue",
+    exchange:   "academic.teachers.created.exchange",
+    routingKey: "teacher.created",
+  },
+  {
+    queue:      "class-offering.academic-teachers.updated.queue",
+    exchange:   "academic.teachers.updated.exchange",
+    routingKey: "teacher.updated",
+  },
+  {
+    queue:      "class-offering.academic-teachers.deleted.queue",
+    exchange:   "academic.teachers.deleted.exchange",
+    routingKey: "teacher.deleted",
+  },
+] as const;
+
+@Injectable()
 export class ClassOfferingConsumer implements OnModuleInit {
-  constructor(@Inject('CLASS_OFFERING_SERVICE') private client: ClientProxy) {}
+  private readonly logger = new Logger(ClassOfferingConsumer.name);
 
-  async onModuleInit() {
-    // Isso garante que a conexão microserviço está estabelecida
-    // quando o módulo inicia, criando a fila no RabbitMQ
-    await this.client.connect();
-  }
+  constructor(private readonly rabbitMQService: RabbitMQService) {}
 
-  @EventPattern('class_offering.created')
-  async handleClassOfferingCreated(data: any) {
-    console.log('✅ Class offering created:', data);
-    // Aqui você pode processar a mensagem, como enviar email, notificar, etc.
-  }
+  async onModuleInit(): Promise<void> {
+    const channel = this.rabbitMQService.getChannel();
 
-  @EventPattern('class_offering.updated')
-  async handleClassOfferingUpdated(data: any) {
-    console.log('✅ Class offering updated:', data);
-    // Processar atualização
+    for (const { queue, exchange, routingKey } of QUEUES) {
+      await channel.assertExchange(exchange, "direct", { durable: true });
+      await channel.assertQueue(queue, { durable: true });
+      await channel.bindQueue(queue, exchange, routingKey);
+      await channel.consume(queue, (msg) => {
+        if (!msg) return;
+        const content = JSON.parse(msg.content.toString());
+        this.logger.log(`[${queue}] received: ${JSON.stringify(content)}`);
+        channel.ack(msg);
+      });
+    }
   }
 }

@@ -38,8 +38,7 @@ export class ClassOfferingService {
 
     const id = await this.classOfferingRepository.create(classOffering);
 
-    // Publicar na fila
-    await this.classOfferingQueueService.publishClassOfferingCreated(id, dto);
+    this.classOfferingQueueService.publishCreated(id, dto);
   }
 
   async list(): Promise<ClassOfferingDto[]> {
@@ -78,9 +77,10 @@ export class ClassOfferingService {
 
     await this.classOfferingRepository.updateStatus(id, status);
 
-    // Publicar na fila
-    await this.classOfferingQueueService.publishClassOfferingUpdated(id, {
-      status,
-    });
+    if (status === ClassOfferingStatus.CANCELED) {
+      this.classOfferingQueueService.publishCanceled(id, { status });
+    } else {
+      this.classOfferingQueueService.publishUpdated(id, { status });
+    }
   }
 }
