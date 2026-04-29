@@ -3,6 +3,7 @@ import { pgEnum, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
 export const classOfferingStatusEnum = pgEnum("class_offering_status", [
   "active",
   "inactive",
+  "canceled",
 ]);
 
 export const classOfferingsSchema = pgTable("class_offerings", {

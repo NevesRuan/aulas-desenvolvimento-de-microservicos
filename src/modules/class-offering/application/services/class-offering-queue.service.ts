@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnApplicationBootstrap } from "@nestjs/common";
 import { RabbitMQService } from "@class-offering/infra/rabbitmq/rabbitmq.service";
 
 const CREATED_EXCHANGE  = "class-offering.created.exchange";
@@ -10,10 +10,10 @@ const UPDATED_ROUTING_KEY  = "class-offering.updated";
 const CANCELED_ROUTING_KEY = "class-offering.canceled";
 
 @Injectable()
-export class ClassOfferingQueueService implements OnModuleInit {
+export class ClassOfferingQueueService implements OnApplicationBootstrap {
   constructor(private readonly rabbitMQService: RabbitMQService) {}
 
-  async onModuleInit(): Promise<void> {
+  async onApplicationBootstrap(): Promise<void> {
     const channel = this.rabbitMQService.getChannel();
     await channel.assertExchange(CREATED_EXCHANGE,  "direct", { durable: true });
     await channel.assertExchange(UPDATED_EXCHANGE,  "direct", { durable: true });
