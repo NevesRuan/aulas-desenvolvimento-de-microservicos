@@ -7,7 +7,7 @@ import type { PaginatedResult } from "@shared/infra/hateoas";
 export const CLASS_OFFERING_REPOSITORY = Symbol("CLASS_OFFERING_REPOSITORY");
 
 export interface ClassOfferingRepository {
-  create(classOffering: ClassOffering): Promise<void>;
+  create(classOffering: ClassOffering): Promise<string>;
   findAll(): Promise<ClassOffering[]>;
   findAllPaginated(
     page: number,
